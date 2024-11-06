@@ -1,0 +1,44 @@
+# Define the number of nodes
+set num_nodes 2
+# Create the simulator object
+set ns [new Simulator]
+# Open the NAM trace file
+set nf [open out.nam w]
+$ns namtrace-all $nf
+# Define a finish procedure
+proc finish {} {
+global ns nf
+$ns flush-trace
+close $nf
+exec nam out.nam &
+exit 0
+}
+# Create nodes
+set node1 [$ns node]
+set node2 [$ns node]
+# Create duplex link between nodes
+$ns duplex-link $node1 $node2 1Mb 10ms DropTail
+# Define sliding window parameters
+set window_size 4
+set num_packets 10
+set packet_size 500
+# TCP Setup for sliding window (Go-Back-N)
+set tcp [new Agent/TCP]
+$tcp set window_ $window_size
+$ns attach-agent $node1 $tcp
+# TCP Sink at the receiver node
+set sink [new Agent/TCPSink]
+$ns attach-agent $node2 $sink
+$ns connect $tcp $sink
+# FTP Application over TCP to send data
+set ftp [new Application/FTP]
+
+$ftp attach-agent $tcp
+$ftp set packetSize_ $packet_size
+$ftp set maxpkts_ $num_packets
+# Simulation starting point
+$ns at 0.5 "$ftp start"
+# Set simulation end time
+$ns at 10.0 "finish"
+# Run the simulation
+$ns run

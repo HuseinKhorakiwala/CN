@@ -1,0 +1,16 @@
+ping google.com (Used to test the reachability of a host and measure the round-trip time for messages sent from
+the originating host to a destination computer.)
+traceroute google.com (Traces the route that packets take to a network host.)
+nslookup google.com (Queries Internet domain name servers to find IP addresses associated with a domain name.)
+netstat -tuln (Displays network connections, routing tables, interface statistics, masquerade connections, and
+multicast memberships.)
+arp -a (Displays and modifies the IP-to-Physical address translation tables used by the Address Resolution
+Protocol (ARP))
+rarp -a (Reverse Address Resolution Protocol, used to request an IP address from a gateway server based
+on the MAC address. Often replaced by DHCP.)
+ip addr show (To show IP addresses:)
+ip route show (To display routing table:)
+ifconfig (Configures network interfaces.)
+ifconfig eth0 up 
+dig google.com (DNS lookup utility, provides more detailed information than `nslookup`.)
+route -n (To display the routing table:)

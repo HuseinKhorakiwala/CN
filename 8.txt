@@ -1,0 +1,188 @@
+TCP server : 
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
+#define PORT 8080
+#define BUFFER_SIZE 1024
+
+int main() {
+	int server_fd, client_fd;
+	struct sockaddr_in server_addr;
+	char buffer[BUFFER_SIZE];
+
+	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+    	perror("Socket creation failed");
+    	exit(EXIT_FAILURE);
+	}
+
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_addr.s_addr = INADDR_ANY;
+	server_addr.sin_port = htons(PORT);
+
+	if (bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+    	perror("Bind failed");
+    	close(server_fd);
+    	exit(EXIT_FAILURE);
+	}
+
+	if (listen(server_fd, 3) < 0) {
+    	perror("Listen failed");
+    	close(server_fd);
+    	exit(EXIT_FAILURE);
+	}
+	printf("Server listening on port %d\n", PORT);
+
+	if ((client_fd = accept(server_fd, NULL, NULL)) < 0) {
+    	perror("Accept failed");
+    	close(server_fd);
+    	exit(EXIT_FAILURE);
+	}
+
+	int bytes_read = read(client_fd, buffer, BUFFER_SIZE);
+	if (bytes_read < 0) {
+    	perror("Read failed");
+    	close(client_fd);
+    	close(server_fd);
+    	exit(EXIT_FAILURE);
+	}
+	buffer[bytes_read] = '\0';
+	printf("Received from client: %s\n", buffer);
+
+	const char *response = "Hello\n";
+	write(client_fd, response, strlen(response));
+
+	close(client_fd);
+	close(server_fd);
+	return 0;
+}
+
+TCP client : 
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
+#define PORT 8080
+#define BUFFER_SIZE 1024
+
+int main() {
+	int sock;
+	struct sockaddr_in server_addr;
+	char *message = "Aditya Saharkar from TCP Client!";
+	char buffer[BUFFER_SIZE];
+
+	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    	perror("Socket creation error");
+    	return -1;
+	}
+
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_port = htons(PORT);
+    
+	if (inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr) <= 0) {
+    	perror("Invalid address / Address not supported");
+    	return -1;
+	}
+
+	if (connect(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+    	perror("Connection failed");
+    	return -1;
+	}
+
+	write(sock, message, strlen(message));
+	int bytes_read = read(sock, buffer, BUFFER_SIZE);
+	buffer[bytes_read] = '\0';
+	printf("Response from server: %s", buffer);
+
+	close(sock);
+	return 0;
+}
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
+#define PORT 8080
+#define BUFFER_SIZE 1024
+
+int main() {
+	int sock;
+	struct sockaddr_in server_addr, client_addr;
+	char buffer[BUFFER_SIZE];
+	socklen_t addr_len = sizeof(client_addr);
+
+	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    	perror("Socket creation failed");
+    	exit(EXIT_FAILURE);
+	}
+
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_addr.s_addr = INADDR_ANY;
+	server_addr.sin_port = htons(PORT);
+
+	if (bind(sock, (const struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+    	perror("Bind failed");
+    	close(sock);
+    	exit(EXIT_FAILURE);
+	}
+
+	printf("UDP Server listening on port %d\n", PORT);
+
+	int n = recvfrom(sock, buffer, BUFFER_SIZE, MSG_WAITALL, (struct sockaddr*)&client_addr, &addr_len);
+	buffer[n] = '\0';
+	printf("Received from client: %s\n", buffer);
+
+	const char *response = "Hello from UDP Server!";
+	sendto(sock, response, strlen(response), MSG_CONFIRM, (const struct sockaddr*)&client_addr, addr_len);
+
+	close(sock);
+	return 0;
+}
+
+UDP client : 
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
+#define PORT 8080
+#define BUFFER_SIZE 1024
+
+int main() {
+	int sock;
+	struct sockaddr_in server_addr;
+	char *message = "Aditya Saharkar from UDP Client!";
+	char buffer[BUFFER_SIZE];
+
+	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    	perror("Socket creation error");
+    	return -1;
+	}
+
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_port = htons(PORT);
+
+	if (inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr) <= 0) {
+    	perror("Invalid address / Address not supported");
+    	return -1;
+	}
+
+	sendto(sock, message, strlen(message), MSG_CONFIRM, (const struct sockaddr*)&server_addr, sizeof(server_addr));
+
+	socklen_t addr_len;
+	int n = recvfrom(sock, buffer, BUFFER_SIZE, MSG_WAITALL, (struct sockaddr*)&server_addr, &addr_len);
+	buffer[n] = '\0';
+	printf("Response from server: %s\n", buffer);
+
+	close(sock);
+	return 0;
+}

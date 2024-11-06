@@ -1,0 +1,669 @@
+exp 2 
+
+ping google.com (Used to test the reachability of a host and measure the round-trip time for messages sent from
+the originating host to a destination computer.)
+traceroute google.com (Traces the route that packets take to a network host.)
+nslookup google.com (Queries Internet domain name servers to find IP addresses associated with a domain name.)
+netstat -tuln (Displays network connections, routing tables, interface statistics, masquerade connections, and
+multicast memberships.)
+arp -a (Displays and modifies the IP-to-Physical address translation tables used by the Address Resolution
+Protocol (ARP))
+rarp -a (Reverse Address Resolution Protocol, used to request an IP address from a gateway server based
+on the MAC address. Often replaced by DHCP.)
+ip addr show (To show IP addresses:)
+ip route show (To display routing table:)
+ifconfig (Configures network interfaces.)
+ifconfig eth0 up 
+dig google.com (DNS lookup utility, provides more detailed information than `nslookup`.)
+route -n (To display the routing table:)
+
+exp 3 ???
+
+exp 4
+
+INSATALLATION OF WIRE SHARK USING TERMINAL -->
+    1. sudo add-apt-repository ppa:wireshark-dev/stable
+    2. sudo apt-get update
+    3. sudo apt-get install wireshark
+    4. sudo wireshark
+
+COMMANDS TO RUN IN WIRE SHARK
+    Run all the commands on the titlebar
+    1. tcp
+    2. udp.port == 443 
+    3. udp 
+    4. tcp.port == 443 
+    5. eth 
+    6. ip addr  == 192.168.3.10
+    7. dns 
+    8. arp 
+    9. ip 
+    10. Promiscuous mode 
+
+exp 5
+
+set ns [new Simulator]
+$ns color 1 Green
+$ns color 2 Yellow
+set nf [open out.nam w]
+$ns namtrace-all $nf
+
+proc finish {} {
+global ns nf
+$ns flush-trace
+close $nf
+exec nam out.nam &
+exit 0
+}
+set n0 [$ns node]
+set n1 [$ns node]
+set n2 [$ns node]
+set n3 [$ns node]
+set n4 [$ns node]
+set n5 [$ns node]
+$ns duplex-link $n0 $n2 2Mb 10ms DropTail
+$ns duplex-link $n1 $n2 2Mb 10ms DropTail
+$ns duplex-link $n2 $n3 1.7Mb 20ms DropTail
+$ns duplex-link $n3 $n4 2Mb 10ms DropTail
+$ns duplex-link $n3 $n5 2Mb 10ms DropTail
+
+$ns duplex-link-op $n0 $n2 orient right-down
+$ns duplex-link-op $n1 $n2 orient right-up
+$ns duplex-link-op $n2 $n3 orient right
+$ns duplex-link-op $n3 $n4 orient right-down
+$ns duplex-link-op $n3 $n5 orient right-up
+
+#TCP
+set tcp [new Agent/TCP]
+$tcp set class_ 2
+$ns attach-agent $n0 $tcp
+
+set sink [new Agent/TCPSink]
+$ns attach-agent $n5 $sink
+$ns connect $tcp $sink
+$tcp set fid_ 1
+# FTP over TCP
+set ftp [new Application/FTP]
+$ftp attach-agent $tcp
+$ftp set type_ FTP
+#UDP
+set udp [new Agent/UDP]
+$ns attach-agent $n1 $udp
+set null [new Agent/Null]
+$ns attach-agent $n4 $null
+$ns connect $udp $null
+$udp set fid_ 2
+#CBR over UDP
+set cbr [new Application/Traffic/CBR]
+$cbr attach-agent $udp
+$cbr set packet_size_ 1000
+$cbr set rate_ 1mb
+$cbr set random_ false
+$ns at 0.1 "$cbr start"
+$ns at 1.0 "$ftp start"
+$ns at 4.0 "$ftp stop"
+$ns at 4.5 "$cbr stop"
+
+# Call the finish procedure after 5 seconds of simulation time
+$ns at 5.0 "finish"
+
+puts "CBR packet size = [$cbr set packet_size_]"
+puts "CBR interval = [$cbr set interval_]"
+$ns run
+
+exp 6
+
+# Define the number of nodes
+set num_nodes 2
+# Create the simulator object
+set ns [new Simulator]
+# Open the NAM trace file
+set nf [open out.nam w]
+$ns namtrace-all $nf
+# Define a finish procedure
+proc finish {} {
+global ns nf
+$ns flush-trace
+close $nf
+exec nam out.nam &
+exit 0
+}
+# Create nodes
+set node1 [$ns node]
+set node2 [$ns node]
+# Create duplex link between nodes
+$ns duplex-link $node1 $node2 1Mb 10ms DropTail
+# Define sliding window parameters
+set window_size 4
+set num_packets 10
+set packet_size 500
+# TCP Setup for sliding window (Go-Back-N)
+set tcp [new Agent/TCP]
+$tcp set window_ $window_size
+$ns attach-agent $node1 $tcp
+# TCP Sink at the receiver node
+set sink [new Agent/TCPSink]
+$ns attach-agent $node2 $sink
+$ns connect $tcp $sink
+# FTP Application over TCP to send data
+set ftp [new Application/FTP]
+
+$ftp attach-agent $tcp
+$ftp set packetSize_ $packet_size
+$ftp set maxpkts_ $num_packets
+# Simulation starting point
+$ns at 0.5 "$ftp start"
+# Set simulation end time
+$ns at 10.0 "finish"
+# Run the simulation
+$ns run
+
+exp 7 
+
+COMMANDS TO INSTALL NMAP
+    1. sudo apt-get install nmap
+    2. nmap <hostname/ip> --> INITIALIZE
+    3. nmap -p 1-80 <IP> --> DEFINES RANGE FOR IP
+    4. sudo nmap -sN <IP> --> IP SCAN
+    5. sudo nmap -sA <IP> --> DETECT FIREWALL SETTINGS
+    6. sudo nmap -sS <IP> --> TCP SYN SCAN
+    7. nmap -A <IP> --> -A INDICATES AGRESSIVENESS
+    8. nmap -p T:80 <IP> --> T:80 COMMAND   
+    9. nmap U:53 <IP>
+    10. nmap -v -A <IP>
+
+exp 8
+
+TCP server : 
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
+#define PORT 8080
+#define BUFFER_SIZE 1024
+
+int main() {
+	int server_fd, client_fd;
+	struct sockaddr_in server_addr;
+	char buffer[BUFFER_SIZE];
+
+	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+    	perror("Socket creation failed");
+    	exit(EXIT_FAILURE);
+	}
+
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_addr.s_addr = INADDR_ANY;
+	server_addr.sin_port = htons(PORT);
+
+	if (bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+    	perror("Bind failed");
+    	close(server_fd);
+    	exit(EXIT_FAILURE);
+	}
+
+	if (listen(server_fd, 3) < 0) {
+    	perror("Listen failed");
+    	close(server_fd);
+    	exit(EXIT_FAILURE);
+	}
+	printf("Server listening on port %d\n", PORT);
+
+	if ((client_fd = accept(server_fd, NULL, NULL)) < 0) {
+    	perror("Accept failed");
+    	close(server_fd);
+    	exit(EXIT_FAILURE);
+	}
+
+	int bytes_read = read(client_fd, buffer, BUFFER_SIZE);
+	if (bytes_read < 0) {
+    	perror("Read failed");
+    	close(client_fd);
+    	close(server_fd);
+    	exit(EXIT_FAILURE);
+	}
+	buffer[bytes_read] = '\0';
+	printf("Received from client: %s\n", buffer);
+
+	const char *response = "Hello\n";
+	write(client_fd, response, strlen(response));
+
+	close(client_fd);
+	close(server_fd);
+	return 0;
+}
+
+TCP client : 
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
+#define PORT 8080
+#define BUFFER_SIZE 1024
+
+int main() {
+	int sock;
+	struct sockaddr_in server_addr;
+	char *message = "Aditya Saharkar from TCP Client!";
+	char buffer[BUFFER_SIZE];
+
+	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    	perror("Socket creation error");
+    	return -1;
+	}
+
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_port = htons(PORT);
+    
+	if (inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr) <= 0) {
+    	perror("Invalid address / Address not supported");
+    	return -1;
+	}
+
+	if (connect(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+    	perror("Connection failed");
+    	return -1;
+	}
+
+	write(sock, message, strlen(message));
+	int bytes_read = read(sock, buffer, BUFFER_SIZE);
+	buffer[bytes_read] = '\0';
+	printf("Response from server: %s", buffer);
+
+	close(sock);
+	return 0;
+}
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
+#define PORT 8080
+#define BUFFER_SIZE 1024
+
+int main() {
+	int sock;
+	struct sockaddr_in server_addr, client_addr;
+	char buffer[BUFFER_SIZE];
+	socklen_t addr_len = sizeof(client_addr);
+
+	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    	perror("Socket creation failed");
+    	exit(EXIT_FAILURE);
+	}
+
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_addr.s_addr = INADDR_ANY;
+	server_addr.sin_port = htons(PORT);
+
+	if (bind(sock, (const struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+    	perror("Bind failed");
+    	close(sock);
+    	exit(EXIT_FAILURE);
+	}
+
+	printf("UDP Server listening on port %d\n", PORT);
+
+	int n = recvfrom(sock, buffer, BUFFER_SIZE, MSG_WAITALL, (struct sockaddr*)&client_addr, &addr_len);
+	buffer[n] = '\0';
+	printf("Received from client: %s\n", buffer);
+
+	const char *response = "Hello from UDP Server!";
+	sendto(sock, response, strlen(response), MSG_CONFIRM, (const struct sockaddr*)&client_addr, addr_len);
+
+	close(sock);
+	return 0;
+}
+
+UDP client : 
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
+#define PORT 8080
+#define BUFFER_SIZE 1024
+
+int main() {
+	int sock;
+	struct sockaddr_in server_addr;
+	char *message = "Aditya Saharkar from UDP Client!";
+	char buffer[BUFFER_SIZE];
+
+	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    	perror("Socket creation error");
+    	return -1;
+	}
+
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_port = htons(PORT);
+
+	if (inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr) <= 0) {
+    	perror("Invalid address / Address not supported");
+    	return -1;
+	}
+
+	sendto(sock, message, strlen(message), MSG_CONFIRM, (const struct sockaddr*)&server_addr, sizeof(server_addr));
+
+	socklen_t addr_len;
+	int n = recvfrom(sock, buffer, BUFFER_SIZE, MSG_WAITALL, (struct sockaddr*)&server_addr, &addr_len);
+	buffer[n] = '\0';
+	printf("Response from server: %s\n", buffer);
+
+	close(sock);
+	return 0;
+}
+
+exp 9 
+
+FTP Commands to Perform
+1. sudo apt update
+2. sudo apt install vsftpd
+3. sudo service vsftpd status
+4. sudo systemctl start vsftpd
+5. sudo nano /etc/vsftpd.conf
+    a. # Allow anomynous FTP? (Disabled by Default)
+    anomynous_enable = YES
+
+    b. # Uncomment this to allow local users to log in
+    local_enable = YES
+
+    c. # Uncomment this to enable any form of FTP write command
+    write_enable = YES
+
+    d. ## ADD THIS COMMANDS AT THE END
+    user_sub_token = $User
+    local_root = /home/$USER/ftp
+    pasv_min_port = 10000
+    pasv_max_port = 10100
+    userlist_enable = YES
+    userlist_file = /etc/vsftpd.userlist
+    userlist_deny = NO
+
+    e. CTRL + X to exit and Y to save
+
+    f. may or maybe
+        sudo ufw allow from any to any port 20,21,10000:10100 proto tcp
+        -> Directly adduser and password
+   
+6. sudo systemctl restart vsftpd
+7. sudo ufw allow ftp
+
+Create User
+8. sudo useradd -m testuser OR sudo adduser -m testuser
+Set Password
+9. sudo passwd testuser
+
+username and password should be same
+
+
+10. Create file for the USER created
+    a. sudo mkdir /home/USERNAME/ftp
+    b. sudo chown nobody:nogroup /home/USERNAME/ftp
+    c. sudo chmod a-w /home/USERNAME/ftp
+    d. sudo mkdir /home/USERNAME/ftp/upload
+    e. sudo chown USERNAME:USERNAME /home/USERNAME/ftp/upload
+    f. echo "My FTP Server" | sudo tee /home/USERNAME/ftp/upload/demo.txt
+
+    g. CHECK FILE --
+        Files -> Other Locations -> computer -> home -> USERNAME -> check_file_created
+
+    h. sudo ls -la /home/USERNAME/ftp
+    i. echo "USERNAME" | sudo tee -a /etc/vsftpd.userlist
+    j. sudo systemctl restart vsftpd
+    k. ifconfig 
+        ens33 -> inet ip_address copy
+    
+
+
+11. sudo ftp your-server-name
+To get your-server-name use command and past it there--> hostname
+ 
+12. Perform Filezilla Process
+
+
+
+
+Filezilla Application Download
+1. lsb_release -a
+2. apt-get update
+3. apt-get install filezilla -y
+4. Search Filezilla in Menu
+
+a. Open Filezilla
+    Host -> IP Copied
+    Username -> Username Created
+    Password -> Password Created
+    Quick Connect -> Check Output
+
+exp 10
+
+Here are some other commonly used CLI commands similar to `whoami` and `who`, which provide information about the current user, system, and environment. These commands work across various operating systems, primarily Linux, macOS, and Windows.
+
+### 1. **id**
+   - **Purpose:** Displays user and group IDs for the current user or a specified user.
+   - **Usage:** 
+     ```bash
+     id
+     ```
+   - **Output Example:** Shows user ID (UID), group ID (GID), and group memberships.
+     ```
+     uid=1001(johndoe) gid=1001(johndoe) groups=1001(johndoe),27(sudo)
+     ```
+
+### 2. **whoami**
+   - **Purpose:** Displays the username of the current logged-in user.
+   - **Usage:**
+     ```bash
+     whoami
+     ```
+   - **Output Example:** `johndoe`
+
+### 3. **hostname**
+   - **Purpose:** Shows the system's hostname.
+   - **Usage:** 
+     ```bash
+     hostname
+     ```
+   - **Output Example:** Returns the name of the computer, e.g., `my-computer`.
+
+### 4. **uptime**
+   - **Purpose:** Displays how long the system has been running, along with the load averages.
+   - **Usage:**
+     ```bash
+     uptime
+     ```
+   - **Output Example:** Shows uptime, number of users, and load averages.
+     ```
+     10:12:45 up 5 days, 3:40,  2 users,  load average: 0.03, 0.05, 0.01
+     ```
+
+### 5. **last**
+   - **Purpose:** Lists the most recent logins for the system.
+   - **Usage:** 
+     ```bash
+     last
+     ```
+   - **Output Example:** Shows usernames, terminal, IP address, login date, and time.
+     ```
+     johndoe  pts/0        192.168.1.101   Tue Nov  5 09:05 - 10:10  (01:05)
+     ```
+
+### 6. **env**
+   - **Purpose:** Prints the environment variables for the current session.
+   - **Usage:**
+     ```bash
+     env
+     ```
+   - **Output Example:** Lists all environment variables and their values.
+     ```
+     PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+     HOME=/home/johndoe
+     SHELL=/bin/bash
+     ```
+
+### 7. **ps**
+   - **Purpose:** Lists currently running processes for the user or the entire system.
+   - **Usage:**
+     - **To list processes for the current user:**
+       ```bash
+       ps
+       ```
+     - **To show all processes:**
+       ```bash
+       ps aux
+       ```
+   - **Output Example:**
+     ```
+     PID   USER     TIME   COMMAND
+     1223  johndoe  0:00   bash
+     1356  johndoe  0:01   python3
+     ```
+
+### 8. **w**
+   - **Purpose:** Displays information about currently logged-in users and what each user is doing.
+   - **Usage:**
+     ```bash
+     w
+     ```
+   - **Output Example:** Shows who is logged in, their idle time, and their current command.
+     ```
+     USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+     johndoe  pts/0    192.168.1.10     09:05    2:00   0.10s  0.10s sshd
+     ```
+
+### 9. **finger**
+   - **Purpose:** Provides information about a user, such as full name, login time, and terminal.
+   - **Usage:**
+     ```bash
+     finger [username]
+     ```
+   - **Output Example:**
+     ```
+     Login: johndoe                     Name: John Doe
+     Directory: /home/johndoe            Shell: /bin/bash
+     On since Fri Oct 22 12:33 (IST) on pts/0
+     ```
+
+### 10. **groups**
+   - **Purpose:** Lists all the groups a user belongs to.
+   - **Usage:** 
+     ```bash
+     groups [username]
+     ```
+   - **Output Example:** Displays groups associated with the user.
+     ```
+     johndoe : johndoe sudo admin
+     ```
+
+### 11. **netstat**
+   - **Purpose:** Displays network connections, routing tables, interface statistics, masquerade connections, and multicast memberships.
+   - **Usage:** 
+     ```bash
+     netstat -a
+     ```
+   - **Output Example:** Shows active connections and listening ports.
+     ```
+     Proto Recv-Q Send-Q Local Address           Foreign Address         State
+     tcp        0      0 0.0.0.0:ssh             0.0.0.0:*               LISTEN
+     ```
+
+### 12. **uname**
+   - **Purpose:** Displays basic information about the system’s kernel.
+   - **Usage:**
+     - **To show kernel name:**
+       ```bash
+       uname
+       ```
+     - **To show detailed information (all options):**
+       ```bash
+       uname -a
+       ```
+   - **Output Example:** Provides system information such as OS, kernel version, and architecture.
+     ```
+     Linux my-computer 5.4.0-74-generic #83-Ubuntu SMP x86_64 GNU/Linux
+     ```
+
+### 13. **df**
+   - **Purpose:** Shows disk space usage for file systems.
+   - **Usage:**
+     ```bash
+     df -h
+     ```
+   - **Output Example:** Lists available and used disk space on mounted partitions.
+     ```
+     Filesystem      Size  Used Avail Use% Mounted on
+     /dev/sda1        50G   12G   35G  26% /
+     ```
+
+Telnet operations allow users to interact with remote systems over a network, often for testing services or troubleshooting connectivity. Here are some common operations and examples of how they can be performed with Telnet:
+
+### 1. **Connecting to a Remote Host**
+   - **Purpose:** Establishes a connection to a remote server on a specified port.
+   - **Command:**
+     ```bash
+     telnet [hostname or IP address] [port]
+     ```
+   - **Example:** Connect to a web server on port 80:
+     ```bash
+     telnet example.com 80
+     ```
+
+### 2. **Checking Open Ports**
+   - **Purpose:** Verifies if a specific port on a remote server is open and accepting connections.
+   - **Command:** Use Telnet to attempt a connection on a port (e.g., `telnet [IP] [port]`).
+   - **Example:** Check if port 25 (SMTP) is open on a mail server:
+     ```bash
+     telnet mail.example.com 25
+     ```
+   - **Expected Result:** If the port is open, you’ll see a response from the server. If not, the connection will fail or time out.
+
+### 3. **Sending HTTP Requests**
+   - **Purpose:** Interact directly with a web server by sending HTTP commands, which can help troubleshoot web services.
+   - **Steps:**
+     1. Connect to the web server’s IP or domain on port 80.
+     2. Send an HTTP GET request and specify the host.
+   - **Example:**
+     ```bash
+     telnet example.com 80
+     GET / HTTP/1.1
+     Host: example.com
+     ```
+   - **Expected Result:** The server should respond with the HTML content of the requested page or an error message.
+
+### 4. **Testing SMTP (Mail Server) Operations**
+   - **Purpose:** Test email functionality by connecting to an SMTP server and sending commands.
+   - **Steps:**
+     1. Connect to the SMTP server on port 25 (or 587).
+     2. Use SMTP commands to simulate sending an email.
+   - **Example:**
+     ```bash
+     telnet mail.example.com 25
+     HELO example.com
+     MAIL FROM:<your-email@example.com>
+     RCPT TO:<recipient@example.com>
+     DATA
+     ```
+   - **Expected Result:** If successful, you should receive responses from the server confirming each step.
+
+### 5. **Testing FTP Server Connection**
+   - **Purpose:** Verify FTP server availability by connecting to it on port 21.
+   - **Command:**
+     ```bash
+     telnet ftp.example.com 21
+     ```
+   - **Expected Result:** If the FTP server is running, it will respond with a welcome message.
+
+### 6. **Checking DNS Services**
+   - **Purpose:** Verify that DNS services are available by connecting to a DNS
+
+  

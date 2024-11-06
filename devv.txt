@@ -1,0 +1,535 @@
+Step-by-Step Guide:
+1. Install MRTG:
+- On Linux: Install using package managers, for example:
+```
+sudo apt install mrtg
+```
+
+2. Configure MRTG:
+
+- MRTG uses SNMP to gather data from routers, switches, and other devices. First, configure SNMP
+on your devices.
+- Generate the MRTG configuration using:
+```
+cfgmaker public@192.168.1.1 &gt; /etc/mrtg.cfg
+```
+Replace `192.168.1.1` with the IP address of your device.
+
+3. Monitor Traffic:
+- MRTG creates graphs of network traffic, helping to visualize data. Open the `mrtg.cfg` file in a
+browser to view the graphs:
+```
+indexmaker /etc/mrtg.cfg &gt; /var/www/html/mrtg/index.html
+```
+
+By usingNmap for active scanning and MRTG for monitoring traffic, you can effectively discover and
+map the devices and services in your networkFTP  exp 9
+Install: sudo apt install vsftpd
+sudo systemctl enable vsftpd
+sudo systemctl start vsftpd
+sudo ufw allow ftp 
+Perform
+ftp ipaddress
+Id pass daalo
+
+ls    >show list
+put filename   >give file
+get filename   >take file
+
+
+
+
+NMAP  exp 7
+sudo apt-get install nmap
+nmap ipadd   >using ip
+nmap www.google.com   >using hostname
+
+nmap -p 1-80 ipadd      >range of ports is 1 to 80
+sudo nmap -sN ipadd   >ping scan
+Sudo nmap -sA ipadd   >detect firewalls
+sudo nmap -sV ipadd    >shows version
+
+
+
+
+
+Telnet  exp 10
+sudo apt install telnetd
+
+sudo systemctl enable telnet
+sudo systemctl start telnet
+
+
+telnet ipadd
+top   …..>list batayega
+kill Pid(7008)
+
+
+
+EXP 2   linux commands
+
+ifconfig     >ip address dega
+ping ipadd   >check connectivity
+netstat        >network related contents
+nslookup domain name   >ip dete
+netstat -r     >routing table
+traceroute domainname   >shows route to that domain
+dig    >
+date    …>shows date
+
+
+sudo apt-get install ns2
+sudo apt-get install tcl
+
+for running :ns filenam.tcl
+
+Code : save as tcl file
+# Create a simulator object
+set ns [new Simulator]
+
+# Define different colors for data flows
+$ns color 1 Blue
+$ns color 2 Red
+
+# Open the nam trace file
+set nf [open out.nam w]
+$ns namtrace-all $nf
+
+# Create two nodes
+set n0 [$ns node]
+set n1 [$ns node]
+
+# Create a duplex link between the nodes
+$ns duplex-link $n0 $n1 1Mb 10ms DropTail
+
+# Create a UDP agent and attach it to node n0
+set udp0 [new Agent/UDP]
+$ns attach-agent $n0 $udp0
+
+# Create a Null agent (a sink) and attach it to node n1
+set null1 [new Agent/Null]
+$ns attach-agent $n1 $null1
+
+# Connect the UDP agent to the Null agent
+$ns connect $udp0 $null1
+
+# Create a CBR traffic generator and attach it to the UDP agent
+set cbr [new Application/Traffic/CBR]
+$cbr set packetSize_ 500
+$cbr set interval_ 0.005
+$cbr attach-agent $udp0
+
+# Schedule the traffic to start at time 0.5 seconds and stop at 4.5 seconds
+$ns at 0.5 "$cbr start"
+$ns at 4.5 "$cbr stop"
+
+# Schedule the finish procedure to be called after 5 seconds
+$ns at 5.0 "finish"
+
+# Define a 'finish' procedure
+proc finish {} {
+    	global ns nf
+    	$ns flush-trace
+
+    	# Close the trace file
+    	close $nf
+
+    	# Execute nam on the trace file
+    	exec nam out.nam &
+    	exit 0
+}
+
+# Run the simulation
+$ns run
+
+Sliding WIndow
+
+# Define the number of nodes
+set num_nodes 2
+
+# Create the simulator object
+set ns [new Simulator]
+
+# Open the NAM trace file
+set nf [open out.nam w]
+$ns namtrace-all $nf
+
+# Define a finish procedure
+proc finish {} {
+    global ns nf
+    $ns flush-trace
+    close $nf
+    exec nam out.nam &
+    exit 0
+}
+
+# Create nodes
+set node1 [$ns node]
+set node2 [$ns node]
+
+# Create duplex link between nodes
+$ns duplex-link $node1 $node2 1Mb 10ms DropTail
+
+# Define sliding window parameters
+set window_size 4
+set num_packets 10
+set packet_size 500
+
+# TCP Setup for sliding window (Go-Back-N)
+set tcp [new Agent/TCP]
+$tcp set window_ $window_size
+$ns attach-agent $node1 $tcp
+
+# TCP Sink at the receiver node
+set sink [new Agent/TCPSink]
+$ns attach-agent $node2 $sink
+$ns connect $tcp $sink
+
+# FTP Application over TCP to send data
+set ftp [new Application/FTP]
+$ftp attach-agent $tcp
+$ftp set packetSize_ $packet_size
+$ftp set maxpkts_ $num_packets
+
+# Simulation starting point
+$ns at 0.5 "$ftp start"
+
+# Set simulation end time
+$ns at 10.0 "finish"
+
+# Run the simulation
+$ns run
+
+
+
+
+
+
+Stop and Wait
+set ns [new Simulator]
+$ns color 1 Blue
+# set nam output file
+set nf [open out.nam w]
+$ns namtrace-all $nf
+
+# destructor
+proc finish {} {
+global ns nf
+$ns flush-trace
+close $nf
+exec nam out.nam &
+exit 0
+}
+
+# create two new nodes and create labels for them
+set n0 [$ns node]
+set n1 [$ns node]
+$ns at 0.0 "$n0 label \" Sender \" "
+$ns at 0.0 "$n1 label \"Receiver\" "
+
+
+# set up a new duplex link
+$ns duplex-link $n0 $n1 1Mb 200ms DropTail
+$ns duplex-link-op $n0 $n1 orient right
+
+# create a new TCP agent
+set tcp [new Agent/TCP]
+# attach the agent to first node
+$ns attach-agent $n0 $tcp
+$tcp set fid_ 1
+$tcp set window_ 1
+$tcp set maxcwnd_ 1
+$ns add-agent-trace $tcp tcp
+$ns monitor-agent-trace $tcp
+set tcpsink [new Agent/TCPSink]
+$ns attach-agent $n1 $tcpsink
+
+$ns connect $tcp $tcpsink
+set ftp [new Application/FTP]
+$ftp attach-agent $tcp
+
+$ns at 0.5 "$ftp start"
+$ns at 3.0 "$ns detach-agent $n0 $tcp ; $ns detach-agent $n1 $tcpsink "
+$ns at 1.0 "$ns trace-annotate \"send packet 1\""
+$ns at 1.4 "$ns trace-annotate \"recieve ack 1\""
+$ns at 2.0 "$ns trace-annotate \"send packet 2\""
+$ns at 2.5 "$ns trace-annotate \"receive ack 2\""
+$ns at 3.2 "$ns trace-annotate \"send packet 3\""
+$ns at 3.5 "$ns trace-annotate \"receive ack 3\""
+$ns at 3.8 "$ns trace-annotate \"send packet 4\""
+$ns at 4.0 "finish"
+$ns run
+
+TCp Server
+#include <stdio.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h> // read(), write(), close()
+#define MAX 80
+#define PORT 8080
+#define SA struct sockaddr
+
+// Function designed for chat between client and server.
+void func(int connfd)
+{
+    char buff[MAX];
+    int n;
+    // infinite loop for chat
+    for (;;) {
+   	 bzero(buff, MAX);
+
+   	 // read the message from client and copy it in buffer
+   	 read(connfd, buff, sizeof(buff));
+   	 // print buffer which contains the client contents
+   	 printf("From client: %s\t To client : ", buff);
+   	 bzero(buff, MAX);
+   	 n = 0;
+   	 // copy server message in the buffer
+   	 while ((buff[n++] = getchar()) != '\n')
+   		 ;
+
+   	 // and send that buffer to client
+   	 write(connfd, buff, sizeof(buff));
+
+   	 // if msg contains "Exit" then server exit and chat ended.
+   	 if (strncmp("exit", buff, 4) == 0) {
+   		 printf("Server Exit...\n");
+   		 break;
+   	 }
+    }
+}
+
+// Driver function
+int main()
+{
+    int sockfd, connfd, len;
+    struct sockaddr_in servaddr, cli;
+
+    // socket create and verification
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd == -1) {
+   	 printf("socket creation failed...\n");
+   	 exit(0);
+    }
+    else
+   	 printf("Socket successfully created..\n");
+    bzero(&servaddr, sizeof(servaddr));
+
+    // assign IP, PORT
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    servaddr.sin_port = htons(PORT);
+
+    // Binding newly created socket to given IP and verification
+    if ((bind(sockfd, (SA*)&servaddr, sizeof(servaddr))) != 0) {
+   	 printf("socket bind failed...\n");
+   	 exit(0);
+    }
+    else
+   	 printf("Socket successfully binded..\n");
+
+    // Now server is ready to listen and verification
+    if ((listen(sockfd, 5)) != 0) {
+   	 printf("Listen failed...\n");
+   	 exit(0);
+    }
+    else
+   	 printf("Server listening..\n");
+    len = sizeof(cli);
+
+    // Accept the data packet from client and verification
+    connfd = accept(sockfd, (SA*)&cli, &len);
+    if (connfd < 0) {
+   	 printf("server accept failed...\n");
+   	 exit(0);
+    }
+    else
+   	 printf("server accept the client...\n");
+
+    // Function for chatting between client and server
+    func(connfd);
+
+    // After chatting close the socket
+    close(sockfd);
+}
+
+
+
+
+
+
+
+TCP client -
+#include <arpa/inet.h> // inet_addr()
+#include <netdb.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h> // bzero()
+#include <sys/socket.h>
+#include <unistd.h> // read(), write(), close()
+#define MAX 80
+#define PORT 8080
+#define SA struct sockaddr
+void func(int sockfd)
+{
+    char buff[MAX];
+    int n;
+    for (;;) {
+   	 bzero(buff, sizeof(buff));
+   	 printf("Enter the string : ");
+   	 n = 0;
+   	 while ((buff[n++] = getchar()) != '\n')
+   		 ;
+   	 write(sockfd, buff, sizeof(buff));
+   	 bzero(buff, sizeof(buff));
+   	 read(sockfd, buff, sizeof(buff));
+   	 printf("From Server : %s", buff);
+   	 if ((strncmp(buff, "exit", 4)) == 0) {
+   		 printf("Client Exit...\n");
+   		 break;
+   	 }
+    }
+}
+
+int main()
+{
+    int sockfd, connfd;
+    struct sockaddr_in servaddr, cli;
+
+    // socket create and verification
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd == -1) {
+   	 printf("socket creation failed...\n");
+   	 exit(0);
+    }
+    else
+   	 printf("Socket successfully created..\n");
+    bzero(&servaddr, sizeof(servaddr));
+
+    // assign IP, PORT
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    servaddr.sin_port = htons(PORT);
+
+    // connect the client socket to server socket
+    if (connect(sockfd, (SA*)&servaddr, sizeof(servaddr))
+   	 != 0) {
+   	 printf("connection with the server failed...\n");
+   	 exit(0);
+    }
+    else
+   	 printf("connected to the server..\n");
+
+    // function for chat
+    func(sockfd);
+
+    // close the socket
+    close(sockfd);
+}
+
+UDP
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
+#define PORT 8080
+#define BUFFER_SIZE 1024
+
+int main() {
+	int sockfd;
+	char buffer[BUFFER_SIZE];
+	struct sockaddr_in servaddr, cliaddr;
+	socklen_t len;
+
+	// Creating socket file descriptor
+	if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    	perror("socket creation failed");
+    	exit(EXIT_FAILURE);
+	}
+
+	memset(&servaddr, 0, sizeof(servaddr));
+	memset(&cliaddr, 0, sizeof(cliaddr));
+
+	// Filling server information
+	servaddr.sin_family = AF_INET; // IPv4
+	servaddr.sin_addr.s_addr = INADDR_ANY; // Any incoming interface
+	servaddr.sin_port = htons(PORT); // Port
+
+	// Bind the socket with the server address
+	if (bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr)) < 0) {
+    	perror("bind failed");
+    	close(sockfd);
+    	exit(EXIT_FAILURE);
+	}
+
+	len = sizeof(cliaddr); // len is value/result
+
+	while (1) {
+    	int n = recvfrom(sockfd, (char *)buffer, BUFFER_SIZE, MSG_WAITALL, (struct sockaddr *) &cliaddr, &len);
+    	buffer[n] = '\0';
+    	printf("Client : %s\n", buffer);
+    	sendto(sockfd, (const char *)buffer, n, MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
+    	printf("Echoed message back to client\n");
+	}
+
+	close(sockfd);
+	return 0;
+}
+
+UDP Client - 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
+#define PORT 8080
+#define BUFFER_SIZE 1024
+
+int main() {
+	int sockfd;
+	char buffer[BUFFER_SIZE];
+	struct sockaddr_in servaddr, cliaddr;
+	socklen_t len;
+
+	// Creating socket file descriptor
+	if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    	perror("socket creation failed");
+    	exit(EXIT_FAILURE);
+	}
+
+	memset(&servaddr, 0, sizeof(servaddr));
+	memset(&cliaddr, 0, sizeof(cliaddr));
+
+	// Filling server information
+	servaddr.sin_family = AF_INET; // IPv4
+	servaddr.sin_addr.s_addr = INADDR_ANY; // Any incoming interface
+	servaddr.sin_port = htons(PORT); // Port
+
+	// Bind the socket with the server address
+	if (bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr)) < 0) {
+    	perror("bind failed");
+    	close(sockfd);
+    	exit(EXIT_FAILURE);
+	}
+
+	len = sizeof(cliaddr); // len is value/result
+
+	while (1) {
+    	int n = recvfrom(sockfd, (char *)buffer, BUFFER_SIZE, MSG_WAITALL, (struct sockaddr *) &cliaddr, &len);
+    	buffer[n] = '\0';
+    	printf("Client : %s\n", buffer);
+    	sendto(sockfd, (const char *)buffer, n, MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
+    	printf("Echoed message back to client\n");
+	}
+
+	close(sockfd);
+	return 0;
+}
